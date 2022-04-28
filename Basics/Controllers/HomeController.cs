@@ -1,32 +1,51 @@
 ﻿using Basics.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace Basics.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
 
         public IActionResult Index()
         {
             return View();
         }
 
-        public IActionResult Privacy()
+        [Authorize]
+        public IActionResult Secret()
         {
             return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        public IActionResult Authenticate()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var grandmaClaims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.Name, "Bob"),
+                new Claim(ClaimTypes.Email, "Bob@fmail.com"),
+                new Claim("Grandma.Says", "very nice boy")
+            };
+
+            var licenseClaims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.Name, "Bob K Foo"),
+                new Claim("DrivingLicense", "A+")
+            };
+
+            var grandmaIdentity = new ClaimsIdentity(grandmaClaims, "Grandma Identity");
+            var licenseIdentity = new ClaimsIdentity(licenseClaims, "License Identity");
+
+            var userPrinciple = new ClaimsPrincipal(new [] { grandmaIdentity, licenseIdentity });
+
+            HttpContext.SignInAsync(userPrinciple);
+
+            return RedirectToAction("Index");
         }
+
     }
 }
